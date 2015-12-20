@@ -1,5 +1,7 @@
 import java.awt.Desktop;
 import java.awt.Image;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.BufferedInputStream;
@@ -19,12 +21,15 @@ import java.net.URLEncoder;
 
 import javax.imageio.IIOException;
 import javax.imageio.ImageIO;
+import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -35,6 +40,10 @@ public class WebServer {
 	static int fileSize = 0;
 	static String fileName = "";
 	static String currentDirectory = System.getProperty("user.home").replace("\\", "/") + "/Desktop/";
+	public static void setCurrentDirectory(String d)
+	{
+		currentDirectory = d.replace("\\", "/");
+	}
 	public static void openWebpage(URI uri) {
 		Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
 		if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
@@ -52,9 +61,13 @@ public class WebServer {
 
 		HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
 		InetAddress IP = InetAddress.getLocalHost();
+		
+		//THE FOLLOWING IS FOR THE PRISM APP SCREEN
 		String myIP = IP.toString().substring(IP.toString().indexOf("/") + 1, IP.toString().length());
+		
+		// Text to help explain Prism
 		String content = 
-				"PRISM IS NOW ACTIVE \n"
+						 "PRISM IS NOW ACTIVE \n"
 						+"Step one: Open your other device's web browser.\n"
 						+"Step two: Navigate to : http://" + myIP + ":8000\n"
 						+"Start your filesharing!\n"
@@ -62,8 +75,8 @@ public class WebServer {
 						+"Guide to using the website:\n"
 						+"You can use any device (laptop/mobile phone/tablet/computer/etc...) to access this device.\n"
 						+"(*) To navigate through the file structure:\n"
-						+"- Click on the ^ button and you will go up one directory"
-						+" or you may click on a folder's link to go further down the file structure.\n"
+						+"- Click on the \"Up to Parent Directory\" button and you will go up one directory\n"
+						+"- Click on a folder's link to go further down the file structure.\n"
 						+"(*) To upload files:\n"
 						+"- Click on Choose File button,\n"
 						+"- Browse for the file to send click ok\n"
@@ -74,13 +87,16 @@ public class WebServer {
 						+"(*) To delete one or more file(s):\n"
 						+"- Click on the checkbox next to the link(s)\n"
 						+"- Click on Delete.\n";
-		JFrame f = new JFrame("Prism");
-		f.addWindowListener(new java.awt.event.WindowAdapter() {
+		// Frame to help users use Prism
+		JFrame mainFrame = new JFrame("Prism");
+		mainFrame.addWindowListener(new java.awt.event.WindowAdapter() {
 			@Override
 			public void windowClosing(java.awt.event.WindowEvent windowEvent) {
 				System.exit(0);
 			}
 		});
+		
+		//Download logo from internet
 		URL url = new URL("http://www.hannaconsultantgroup.com/Prism.png");
 		Image image;
 		try 
@@ -95,13 +111,31 @@ public class WebServer {
 		if (image != null)
 		{
 			icon = new ImageIcon(image);
-			f.setIconImage(image);
+			mainFrame.setIconImage(image);
 		}
-		JPanel panel = new JPanel();
-		f.getContentPane().add(panel,"Center");
-		JTextArea ta = new JTextArea(content, 21, 50);
-		ta.setLineWrap(true);
-		panel.add(new JScrollPane(ta));
+		
+		//Create explanation panel, and change directory panel.
+		JPanel explanationPanel = new JPanel();
+		explanationPanel.setLayout(new BoxLayout(explanationPanel, BoxLayout.PAGE_AXIS));
+		mainFrame.getContentPane().add(explanationPanel,"Center");
+		JTextArea explanationText = new JTextArea(content, 21, 50);
+		explanationText.setLineWrap(true);
+		explanationPanel.add(new JScrollPane(explanationText));
+		JPanel directoryPanel = new JPanel();
+		JTextField directoryField = new JTextField(currentDirectory);
+		JButton directoryButton = new JButton("Change Directory");
+		directoryButton.addActionListener(new ActionListener()
+		{
+		  public void actionPerformed(ActionEvent e)
+		  {
+			  setCurrentDirectory(directoryField.getText());
+		   
+		  }
+		});
+		directoryPanel.add(directoryField);
+		directoryPanel.add(directoryButton);
+		mainFrame.getContentPane().add(directoryPanel,"South");
+		//Add the "about us" icon which links to our page.
 		JLabel iconLabel = new JLabel();
 		if (image != null && icon != null)
 			iconLabel = new JLabel(icon);
@@ -112,11 +146,11 @@ public class WebServer {
 				openWebpage(URI.create("http://www.hannaconsultantgroup.com/prism.html"));
 			}
 		});
-		panel.add(iconLabel);
-		f.pack();
-		f.setVisible(true);
+		mainFrame.add(iconLabel,"East");
+		mainFrame.pack();
+		mainFrame.setVisible(true);
 
-
+		// NEXT, LETS DEFINE THE SERVER'S ACTUAL CODE...
 		server.createContext("/", new getMain());
 		server.createContext("/file_upload", new getUpload());
 		server.createContext("/file_seek", new getFile());
@@ -149,12 +183,6 @@ public class WebServer {
 	//Takes an unformatted string and returns a corrected one
 	//Some symbols like # still seem to crash the program
 	public static String formatString(String s) {
-		/*s = s.replace("%20", " ");
-		s = s.replace("%5B", "[");
-		s = s.replace("%5D", "]");
-		s = s.replace("%7B", "{");
-		s = s.replace("%7D", "}");
-		s = s.replace("%60", "`");*/
 		try {
 			s = URLDecoder.decode(s, "UTF-8");
 		} catch (UnsupportedEncodingException e) {
@@ -217,7 +245,7 @@ public class WebServer {
 				//System.out.println(newFolderDir);
 				response = response + "<table id=functionTable><tr>";
 				if(!newFolderDir.equals("")){
-					response=response+ " <td><form method=post action=folder_up name=folder_up id=folder_up><input form=folder_up type=submit value=\"^\" title=\"Go up one level in the file system\"></form></td>";
+					response=response+ " <td><form method=post action=folder_up name=folder_up id=folder_up><input form=folder_up type=submit value=\"Up to Parent Directory\" title=\"Go up one level in the file system\"></form></td>";
 				}
 				response=response + "<td>"
 						+ "<script>"
