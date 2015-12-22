@@ -132,6 +132,10 @@ public class WebServer {
 		   
 		  }
 		});
+		
+		JLabel directoryLabel = new JLabel ("Starting/current directory:");
+		
+		directoryPanel.add(directoryLabel);
 		directoryPanel.add(directoryField);
 		directoryPanel.add(directoryButton);
 		mainFrame.getContentPane().add(directoryPanel,"South");
@@ -158,6 +162,7 @@ public class WebServer {
 		server.createContext("/folder_up", new getFolderUp());
 		server.createContext("/make_dir", new getMakeDir());
 		server.createContext("/delete", new getDelete());
+		server.createContext("/embed", new getDelete());
 		server.setExecutor(null); // creates a default executor
 		server.start();
 	}
@@ -235,7 +240,16 @@ public class WebServer {
 			else
 			{
 				//System.out.println("getMain GET Handler");
-				String response = "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html;charset=UTF-8\"><title>Prism</title><link rel=icon type=\"image/png\" href=\"http://www.hannaconsultantgroup.com/prism_icon.ico\"></head><body><a href=\"http://www.hannaconsultantgroup.com/prism.html\"><a href=\"http://www.hannaconsultantgroup.com/prism.html\"><img src=http://www.hannaconsultantgroup.com/Prism.jpg width=50 height=50></a></a>"
+				String response = "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html;charset=UTF-8\">"
+						+ "<title>Prism</title>"
+						+ "<link rel=icon type=\"image/png\" href=\"http://www.hannaconsultantgroup.com/prism_icon.ico\">"
+						+ "</head>"
+						+ "<body>"
+
+						+ "<table id=functionTable><tr><td>"
+						+ "<a href=\"http://www.hannaconsultantgroup.com/prism.html\">"
+						+ "<img src=http://www.hannaconsultantgroup.com/Prism.jpg width=50 height=50>"
+						+ "</a></td><td>"
 						+ currentDirectory;
 				//File System Level up button
 				//Handles case where user it at root level
@@ -243,7 +257,7 @@ public class WebServer {
 				newFolderDir=newFolderDir.substring(newFolderDir.indexOf(":/"), newFolderDir.length());
 				newFolderDir=newFolderDir.replace("://", "");
 				//System.out.println(newFolderDir);
-				response = response + "<table id=functionTable><tr>";
+				response = response + "";
 				if(!newFolderDir.equals("")){
 					response=response+ " <td><form method=post action=folder_up name=folder_up id=folder_up><input form=folder_up type=submit value=\"Up to Parent Directory\" title=\"Go up one level in the file system\"></form></td>";
 				}
@@ -260,10 +274,10 @@ public class WebServer {
 						+ "<form method=post action=make_dir name=mkdir id=mkdir enctype=\"multipart/form-data\"><input type=hidden form=mkdir id=dirName name=dirName> <input type=submit value=\"Create Directory\" form=\"mkdir\" onclick=\"myFunction();\" title=\"Create a directory in the current directory\"></form></td> "
 						+ "</tr>"
 						+ "</tr></table>"
-						+ "<form id=myform name=myform method=post action=file_upload enctype=\"multipart/form-data\">"
-						+ "<input type=file id=files name=files title=\"Choose a file to upload to the current directory\">"
+						+ "<form id=fileForm name=fileForm method=post action=file_upload enctype=\"multipart/form-data\">"
+						+ "<input type=file style=\"border:1px solid #000; height:155px; width:100%;\" id=files name=files title=\"Choose a file to upload to the current directory\">"
 						+ "<input type=hidden id=filesize name=filesize>"
-						+ "<input type=submit name=submit value=\"Upload\" title=\"Upload chosen file to the current directory\"></form>"
+						+ "<input type=submit name=submit value=\"Upload\" title=\"Upload chosen file to the current directory\"><font size=1>Drag and Drop files in the box above and click on Upload button to Upload.</font></form>"
 						+ "			<script>"
 						+ "				function handleFileSelect(evt) {"
 						+ "				    var files = evt.target.files;"
@@ -289,7 +303,8 @@ public class WebServer {
 								+ listOfFiles[i].getName() + "</a></td></tr>";
 					}
 				}
-				response = response + "<input type=submit value=\"Delete\" form=\"delete_items\" title=\"Delete the files/folders you have selected\"></form></table></body> </html>";
+				response = response + "<input type=submit value=\"Delete\" form=\"delete_items\" title=\"Delete the files/folders you have selected\">"
+						+ "</form></table></body> </html>";
 
 				t.sendResponseHeaders(200, response.length());
 				OutputStream os = t.getResponseBody();
