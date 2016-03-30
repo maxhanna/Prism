@@ -162,17 +162,10 @@ public class WebServer {
 		server.createContext("/folder_up", new getFolderUp());
 		server.createContext("/make_dir", new getMakeDir());
 		server.createContext("/delete", new getDelete());
-		server.createContext("/embed", new getDelete());
 		server.setExecutor(null); // creates a default executor
 		server.start();
 	}
-	public static int ordinalIndexOf(String str, char wantedChar, int wantedCharNum) {
-		int pos = str.indexOf(wantedChar, 0);
-		while (wantedCharNum-- > 0 && pos != -1)
-			pos = str.indexOf(wantedChar, pos+1);
-		return pos;
-	}
-
+	
 	public static int numberOfOccurrences(String source, String sentence) {
 		int occurrences = 0;
 
@@ -294,7 +287,23 @@ public class WebServer {
 				for (int i = 0; i < listOfFiles.length; i++) {
 					if (listOfFiles[i].isFile()) {
 						response = response + "<tr><td><input name="+i+" type=checkbox value=\""+ listOfFiles[i].getName() +"\">File</td> <td><a href=\"file_seek/" + URLEncoder.encode(listOfFiles[i].getName(), "UTF-8") + "\">"
-								+ listOfFiles[i].getName() + "</a></td></tr>";
+								+ listOfFiles[i].getName() + "</a></td>";
+						//Chunk of commented code made for creating a "stream" link, if the file is video or audio.
+						//HOWEVER, CODE NOT YET WORKING.
+						
+						/*if (listOfFiles[i].getName().contains(".avi")||listOfFiles[i].getName().contains(".mp3")
+								||listOfFiles[i].getName().contains(".mp4")|| listOfFiles[i].getName().contains(".ogg")
+								||listOfFiles[i].getName().contains(".swf")||listOfFiles[i].getName().contains(".asf")
+								||listOfFiles[i].getName().contains(".wma")||listOfFiles[i].getName().contains(".wmv")
+								||listOfFiles[i].getName().contains(".mpg")||listOfFiles[i].getName().contains(".mpeg")
+								||listOfFiles[i].getName().contains(".m1v")||listOfFiles[i].getName().contains(".mp2")
+								||listOfFiles[i].getName().contains(".mpe")||listOfFiles[i].getName().contains(".m3u")
+								||listOfFiles[i].getName().contains(".midi")||listOfFiles[i].getName().contains(".mid")
+								||listOfFiles[i].getName().contains(".rmi")||listOfFiles[i].getName().contains(".aif")
+								||listOfFiles[i].getName().contains(".wav")||listOfFiles[i].getName().contains(".mov")
+								||listOfFiles[i].getName().contains(".m4a"))
+							response = response + "<td><a href=\"/stream/"+listOfFiles[i].getName()+"\">Stream</a></td>";*/
+						response = response	+ "</tr>";
 					} 
 				}
 				for (int i = 0; i < listOfFiles.length; i++) {	
@@ -555,7 +564,9 @@ public class WebServer {
 		}
 	}
 
-	/* This will be used when the server receives files from users */
+	
+
+	/* This is used when the server receives files from users */
 	static class getUpload implements HttpHandler {
 		@Override
 		public void handle(HttpExchange t) throws IOException {
